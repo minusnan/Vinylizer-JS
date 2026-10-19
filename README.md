@@ -62,8 +62,8 @@ canvas    — отрисовка пластинки / слипа / проигр�
 ## Установка и запуск
 
 ```bash
-git clone <URL-вашего-репозитория>.git
-cd <имя-папки>
+git clone https://github.com/minusnan/Vinylizer-JS.git
+cd Vinylizer-JS
 npm install
 npm start
 ```
