@@ -1,0 +1,27 @@
+{
+  "name": "vinyl-video-creator",
+  "version": "1.2.0",
+  "description": "Web app that generates spinning vinyl record videos with music — plain disc, sleeve, turntable with moving tonearm, crackle, post-FX.",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "canvas": "^3.2.3",
+    "express": "^5.3.0",
+    "multer": "^2.4.0"
+  },
+  "keywords": [
+    "vinyl",
+    "video",
+    "ffmpeg",
+    "canvas",
+    "lofi"
+  ]
+}

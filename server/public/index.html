@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vinyl Video Creator</title>
+  <style>
+    :root {
+      --bg: #0e0e0e;
+      --card: #1a1a1a;
+      --border: #333;
+      --text: #eee;
+      --muted: #999;
+      --accent: #4CAF50;
+      --accent-hover: #45a049;
+      --section: #222;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+      line-height: 1.45;
+    }
+    h1 { text-align: center; font-weight: 600; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: var(--muted); margin-bottom: 28px; font-size: 0.95rem; }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px 18px;
+    }
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    label { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; display: block; }
+    input[type="file"],
+    input[type="number"],
+    input[type="color"],
+    input[type="range"],
+    select {
+      width: 100%;
+      padding: 9px 10px;
+      background: #252525;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    input[type="color"] { height: 40px; padding: 3px; cursor: pointer; }
+    input[type="range"] { padding: 0; height: 28px; cursor: pointer; }
+    input:disabled, select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .row:last-child { margin-bottom: 0; }
+    .row > div { flex: 1; min-width: 140px; }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .check-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .check-row label { margin: 0; font-weight: 500; cursor: pointer; }
+
+    button[type="submit"] {
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.05rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    button[type="submit"]:hover:not(:disabled) { background: var(--accent-hover); }
+    button[type="submit"]:disabled { background: #444; cursor: not-allowed; }
+
+    #result { text-align: center; margin-top: 28px; }
+    video {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 12px;
+      background: #000;
+    }
+    .hint { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+    a.download {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    a.download:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>🎵 Винил-видео</h1>
+  <p class="subtitle">Крутящаяся пластинка под ваш трек</p>
+
+  <form id="form">
+
+    <!-- 1. FILES -->
+    <div class="section">
+      <h2 class="section-title">Файлы</h2>
+      <div class="row">
+        <div>
+          <label>Аудио (mp3 / flac / wav)</label>
+          <input type="file" name="audio" accept="audio/*" required>
+        </div>
+        <div>
+          <label>Обложка (jpg / png)</label>
+          <input type="file" name="cover" accept="image/*" required>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Фон (опционально)</label>
+          <input type="file" name="background" accept="image/*,video/*,.gif">
+          <div class="hint">Картинка, GIF или видео — зациклится на всю длину.</div>
+        </div>
+        <div>
+          <label>Цвет фона</label>
+          <input type="color" name="bgColor" value="#1a1a1a">
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. SCENE -->
+    <div class="section">
+      <h2 class="section-title">Сцена</h2>
+      <div class="row">
+        <div>
+          <label>Тип сцены</label>
+          <select name="scene" id="sceneSelect">
+            <option value="plain">Пластинка</option>
+            <option value="sleeve">Слипкейс</option>
+            <option value="turntable" selected>Проигрыватель</option>
+          </select>
+          <div class="hint" id="sceneHint">На проигрывателе игла едет от края к центру.</div>
+        </div>
+        <div>
+          <label>Позиция</label>
+          <select name="position">
+            <option value="top">Сверху</option>
+            <option value="center" selected>По центру</option>
+            <option value="bottom">Снизу</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Стиль диска</label>
+          <select name="style">
+            <option value="circle" selected>Кружок (этикетка)</option>
+            <option value="texture">Текстура (полная обложка)</option>
+          </select>
+        </div>
+        <div>
+          <label>Центр</label>
+          <select name="center">
+            <option value="hole" selected>Дырка</option>
+            <option value="spindle">Шпиндель</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Цвет пластинки</label>
+          <input type="color" name="vinylColor" value="#0e0e0e">
+        </div>
+        <div>
+          <label>Бороздки: <span id="grooveVal">100</span>%</label>
+          <input type="range" name="grooveIntensity" id="grooveIntensity" min="0" max="200" value="100" step="10">
+          <div class="hint">0 — гладкая, 200 — очень заметные линии.</div>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Царапины</label>
+          <div class="check-row">
+            <input type="checkbox" name="scratches" id="scratches" value="1">
+            <label for="scratches">Потёртая пластинка</label>
+          </div>
+          <div id="scratchWrap" style="opacity:0.4;pointer-events:none;margin-top:8px;">
+            <label>Сила: <span id="scratchVal">40</span>%</label>
+            <input type="range" name="scratchAmount" id="scratchAmount" min="10" max="100" value="40" step="5">
+          </div>
+        </div>
+        <div>
+          <label>Тень</label>
+          <div class="check-row">
+            <input type="checkbox" name="shadowEnabled" id="shadowEnabled" value="1" checked>
+            <label for="shadowEnabled">Тень под объектом</label>
+          </div>
+          <div id="shadowWrap" style="margin-top:8px;">
+            <label>Цвет</label>
+            <input type="color" name="shadowColor" id="shadowColor" value="#000000">
+          </div>
+          <div id="shadowIntensityWrap" style="margin-top:8px;">
+            <label>Интенсивность: <span id="shadowIntensityVal">65</span>%</label>
+            <input type="range" name="shadowIntensity" id="shadowIntensity" min="0" max="100" value="65" step="5">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. TIMING -->
+    <div class="section">
+      <h2 class="section-title">Время и вращение</h2>
+      <div class="row">
+        <div>
+          <label>Режим</label>
+          <select name="mode" id="modeSelect">
+            <option value="loop" selected>Под трек (или отрезок)</option>
+            <option value="single">Один оборот (1 RPM · 60 с)</option>
+          </select>
+          <div class="hint" id="modeHint">Длина видео = выбранный отрезок. RPM — скорость.</div>
+        </div>
+        <div>
+          <label>RPM</label>
+          <input type="number" name="rpm" id="rpmInput" value="33.333" step="0.001" min="1" max="100">
+          <div class="hint" id="rpmHint">Только скорость вращения.</div>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>С (сек)</label>
+          <input type="number" name="startTime" value="0" min="0" step="0.1">
+        </div>
+        <div>
+          <label>До (сек)</label>
+          <input type="number" name="endTime" id="endTime" value="" min="0" step="0.1" placeholder="до конца">
+          <div class="hint" id="endHint">Пусто = до конца трека.</div>
+        </div>
+        <div>
+          <label>Fade in</label>
+          <input type="number" name="fadeIn" value="2" min="0" step="0.5">
+        </div>
+        <div>
+          <label>Fade out</label>
+          <input type="number" name="fadeOut" value="3" min="0" step="0.5">
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. AUDIO -->
+    <div class="section">
+      <h2 class="section-title">Звук</h2>
+      <div class="row">
+        <div>
+          <label>Громкость трека: <span id="trackVolumeVal">100</span>%</label>
+          <input type="range" name="trackVolume" id="trackVolume" min="0" max="150" value="100" step="5">
+        </div>
+        <div>
+          <label>Качество аудио (AAC)</label>
+          <select name="audioBitrate">
+            <option value="128">128 kbps</option>
+            <option value="192">192 kbps</option>
+            <option value="256">256 kbps</option>
+            <option value="320" selected>320 kbps (макс.)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Виниловый crackle</label>
+          <div class="check-row">
+            <input type="checkbox" name="vinylNoise" id="vinylNoise" value="1">
+            <label for="vinylNoise">Потрескивание пластинки</label>
+          </div>
+          <div class="hint">Встроенный семпл или свой файл ниже.</div>
+        </div>
+        <div id="noiseLevelWrap" style="opacity:0.4;pointer-events:none;">
+          <label>Громкость crackle: <span id="noiseLevelVal">35</span>%</label>
+          <input type="range" name="noiseLevel" id="noiseLevel" min="5" max="100" value="35" step="5">
+        </div>
+      </div>
+      <div class="row" id="vinylSampleRow" style="opacity:0.4;pointer-events:none;">
+        <div>
+          <label>Свой crackle-семпл</label>
+          <input type="file" name="vinylSample" id="vinylSample" accept="audio/*">
+          <div class="hint">wav / mp3 / flac. Пусто = встроенный.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. OUTPUT -->
+    <div class="section">
+      <h2 class="section-title">Кадр и фон</h2>
+      <div class="row">
+        <div>
+          <label>Соотношение сторон</label>
+          <select name="aspect">
+            <option value="1:1" selected>1:1</option>
+            <option value="16:9">16:9</option>
+            <option value="9:16">9:16</option>
+            <option value="4:5">4:5</option>
+          </select>
+        </div>
+        <div>
+          <label>Разрешение</label>
+          <select name="resolution">
+            <option value="1080p" selected>1080p</option>
+            <option value="720p">720p</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Фон: размытие <span id="bgBlurVal">0</span></label>
+          <input type="range" name="bgBlur" id="bgBlur" min="0" max="30" value="0" step="1">
+        </div>
+        <div>
+          <label>Фон: затемнение <span id="bgDimVal">0</span>%</label>
+          <input type="range" name="bgDim" id="bgDim" min="0" max="70" value="0" step="5">
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. POST -->
+    <div class="section">
+      <h2 class="section-title">Постобработка</h2>
+      <div class="row">
+        <div>
+          <label>Эффект</label>
+          <select name="postFx" id="postFx">
+            <option value="none" selected>Нет</option>
+            <option value="vignette">Виньетка</option>
+            <option value="sepia">Сепия</option>
+            <option value="bw">Чёрно-белое</option>
+            <option value="warm">Тёплый тон</option>
+            <option value="cool">Холодный тон</option>
+            <option value="contrast">Контраст / сочность</option>
+          </select>
+        </div>
+        <div id="postFxAmountWrap" style="opacity:0.4;pointer-events:none;">
+          <label>Сила: <span id="postFxAmountVal">50</span>%</label>
+          <input type="range" name="postFxAmount" id="postFxAmount" min="10" max="100" value="50" step="5">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Зерно</label>
+          <div class="check-row">
+            <input type="checkbox" name="filmGrain" id="filmGrain" value="1">
+            <label for="filmGrain">Плёночное зерно</label>
+          </div>
+        </div>
+        <div id="grainLevelWrap" style="opacity:0.4;pointer-events:none;">
+          <label>Уровень: <span id="grainLevelVal">20</span>%</label>
+          <input type="range" name="grainLevel" id="grainLevel" min="5" max="80" value="20" step="5">
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" id="submitBtn">Сгенерировать видео</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('form');
+    const resultDiv = document.getElementById('result');
+    const submitBtn = document.getElementById('submitBtn');
+    const modeSelect = document.getElementById('modeSelect');
+    const modeHint = document.getElementById('modeHint');
+    const sceneSelect = document.getElementById('sceneSelect');
+    const sceneHint = document.getElementById('sceneHint');
+    const rpmInput = document.getElementById('rpmInput');
+    const rpmHint = document.getElementById('rpmHint');
+    const endTime = document.getElementById('endTime');
+    const endHint = document.getElementById('endHint');
+
+    const vinylNoise = document.getElementById('vinylNoise');
+    const noiseLevel = document.getElementById('noiseLevel');
+    const noiseLevelVal = document.getElementById('noiseLevelVal');
+    const noiseLevelWrap = document.getElementById('noiseLevelWrap');
+    const vinylSampleRow = document.getElementById('vinylSampleRow');
+
+    const filmGrain = document.getElementById('filmGrain');
+    const grainLevel = document.getElementById('grainLevel');
+    const grainLevelVal = document.getElementById('grainLevelVal');
+    const grainLevelWrap = document.getElementById('grainLevelWrap');
+
+    const shadowEnabled = document.getElementById('shadowEnabled');
+    const shadowIntensity = document.getElementById('shadowIntensity');
+    const shadowIntensityVal = document.getElementById('shadowIntensityVal');
+    const shadowWrap = document.getElementById('shadowWrap');
+    const shadowIntensityWrap = document.getElementById('shadowIntensityWrap');
+
+    const trackVolume = document.getElementById('trackVolume');
+    const trackVolumeVal = document.getElementById('trackVolumeVal');
+    const grooveIntensity = document.getElementById('grooveIntensity');
+    const grooveVal = document.getElementById('grooveVal');
+    const scratches = document.getElementById('scratches');
+    const scratchAmount = document.getElementById('scratchAmount');
+    const scratchVal = document.getElementById('scratchVal');
+    const scratchWrap = document.getElementById('scratchWrap');
+    const bgBlur = document.getElementById('bgBlur');
+    const bgBlurVal = document.getElementById('bgBlurVal');
+    const bgDim = document.getElementById('bgDim');
+    const bgDimVal = document.getElementById('bgDimVal');
+    const postFx = document.getElementById('postFx');
+    const postFxAmount = document.getElementById('postFxAmount');
+    const postFxAmountVal = document.getElementById('postFxAmountVal');
+    const postFxAmountWrap = document.getElementById('postFxAmountWrap');
+
+    let savedRpm = rpmInput.value;
+
+    function toggleWrap(check, wrap) {
+      const on = check.checked;
+      wrap.style.opacity = on ? '1' : '0.4';
+      wrap.style.pointerEvents = on ? 'auto' : 'none';
+    }
+
+    function updateHints() {
+      const isSingle = modeSelect.value === 'single';
+      if (isSingle) {
+        if (rpmInput.value !== '1') savedRpm = rpmInput.value;
+        rpmInput.value = '1';
+        rpmInput.disabled = true;
+        endTime.disabled = true;
+        endTime.value = '';
+        modeHint.textContent = 'Один оборот за 60 с (1 RPM). Аудио с «С».';
+        endHint.textContent = 'В этом режиме всегда 60 с.';
+        rpmHint.textContent = 'Зафиксировано: 1 RPM.';
+      } else {
+        rpmInput.disabled = false;
+        if (rpmInput.value === '1' && savedRpm) rpmInput.value = savedRpm;
+        endTime.disabled = false;
+        modeHint.textContent = 'Длина = отрезок трека (С → До). RPM — скорость.';
+        endHint.textContent = 'Пусто = до конца трека.';
+        rpmHint.textContent = 'Только скорость вращения.';
+      }
+      if (sceneSelect.value === 'turntable') {
+        sceneHint.textContent = 'Игла едет от края к центру за всё время ролика.';
+      } else if (sceneSelect.value === 'sleeve') {
+        sceneHint.textContent = 'Пластинка выдвинута из кейса; дырка чуть за краем.';
+      } else {
+        sceneHint.textContent = 'Крупный диск на весь кадр.';
+      }
+    }
+
+    function syncPostFx() {
+      const on = postFx.value !== 'none';
+      postFxAmountWrap.style.opacity = on ? '1' : '0.4';
+      postFxAmountWrap.style.pointerEvents = on ? 'auto' : 'none';
+    }
+
+    modeSelect.addEventListener('change', updateHints);
+    sceneSelect.addEventListener('change', updateHints);
+    vinylNoise.addEventListener('change', () => {
+      toggleWrap(vinylNoise, noiseLevelWrap);
+      toggleWrap(vinylNoise, vinylSampleRow);
+    });
+    filmGrain.addEventListener('change', () => toggleWrap(filmGrain, grainLevelWrap));
+    noiseLevel.addEventListener('input', () => { noiseLevelVal.textContent = noiseLevel.value; });
+    grainLevel.addEventListener('input', () => { grainLevelVal.textContent = grainLevel.value; });
+    shadowIntensity.addEventListener('input', () => { shadowIntensityVal.textContent = shadowIntensity.value; });
+    shadowEnabled.addEventListener('change', () => {
+      toggleWrap(shadowEnabled, shadowWrap);
+      toggleWrap(shadowEnabled, shadowIntensityWrap);
+    });
+    trackVolume.addEventListener('input', () => { trackVolumeVal.textContent = trackVolume.value; });
+    grooveIntensity.addEventListener('input', () => { grooveVal.textContent = grooveIntensity.value; });
+    scratchAmount.addEventListener('input', () => { scratchVal.textContent = scratchAmount.value; });
+    scratches.addEventListener('change', () => toggleWrap(scratches, scratchWrap));
+    bgBlur.addEventListener('input', () => { bgBlurVal.textContent = bgBlur.value; });
+    bgDim.addEventListener('input', () => { bgDimVal.textContent = bgDim.value; });
+    postFx.addEventListener('change', syncPostFx);
+    postFxAmount.addEventListener('input', () => { postFxAmountVal.textContent = postFxAmount.value; });
+
+    updateHints();
+    toggleWrap(vinylNoise, noiseLevelWrap);
+    toggleWrap(vinylNoise, vinylSampleRow);
+    toggleWrap(filmGrain, grainLevelWrap);
+    toggleWrap(shadowEnabled, shadowWrap);
+    toggleWrap(shadowEnabled, shadowIntensityWrap);
+    toggleWrap(scratches, scratchWrap);
+    syncPostFx();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultDiv.innerHTML = '⏳ Генерация… Это может занять от нескольких секунд до пары минут.';
+      submitBtn.disabled = true;
+
+      const rpmWasDisabled = rpmInput.disabled;
+      if (rpmWasDisabled) rpmInput.disabled = false;
+      const formData = new FormData(form);
+      if (rpmWasDisabled) rpmInput.disabled = true;
+
+      if (!formData.get('endTime')) formData.delete('endTime');
+      if (!vinylNoise.checked) formData.set('vinylNoise', '0');
+      if (!filmGrain.checked) formData.set('filmGrain', '0');
+      if (!shadowEnabled.checked) formData.set('shadowEnabled', '0');
+      if (!scratches.checked) formData.set('scratches', '0');
+
+      try {
+        const res = await fetch('/generate', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+          const range = (data.start != null && data.end != null)
+            ? ` · ${data.start.toFixed(1)}–${data.end.toFixed(1)} с` : '';
+          const rpmInfo = data.rpm ? ` · ${data.rpm} RPM` : '';
+          resultDiv.innerHTML = `
+            <p>✅ Готово${data.duration ? ` (${data.duration.toFixed(1)} с${range}${rpmInfo})` : ''}</p>
+            <video controls src="${data.videoUrl}"></video>
+            <p><a class="download" href="${data.videoUrl}" download>Скачать mp4</a></p>
+          `;
+        } else {
+          resultDiv.innerHTML = `❌ Ошибка: ${data.error || 'неизвестная'}`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `❌ Ошибка сети: ${err.message}`;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

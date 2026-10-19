@@ -1,0 +1,8 @@
+node_modules/
+uploads/
+outputs/
+*.log
+.DS_Store
+.env
+*.zip
+package-lock.json
